@@ -1,4 +1,6 @@
-import { Router, Request, Response } from 'express';
+import { Router } from "express";
+import passport from "passport";
+import { register, login, logout, refresh, oauthSuccessCallback } from "../controllers/auth.controller";
 
 const router = Router();
 
@@ -7,77 +9,90 @@ const router = Router();
  * @desc    Registers a new user (Email/Password)
  * @access  Public
  */
-router.post('/register', (req: Request, res: Response) => {
-  res.status(200).json({
-    message: 'Mock Register Endpoint. Registration successful.',
-    data: {
-      userId: 'mock_user_id_123',
-      name: req.body.name || 'Mock User',
-      email: req.body.email || 'mock@teampulse.com',
-    },
-  });
-});
+router.post("/register", register);
 
 /**
  * @route   POST /api/auth/login
  * @desc    Logs in a user (Email/Password) and sets HttpOnly Refresh Token cookie
  * @access  Public
  */
-router.post('/login', (req: Request, res: Response) => {
-  res.status(200).json({
-    message: 'Mock Login Endpoint. Login successful.',
-    accessToken: 'mock_access_token_jwt_xxxxx',
-    user: {
-      id: 'mock_user_id_123',
-      email: req.body.email || 'mock@teampulse.com',
-      name: 'Mock User',
-    },
-  });
-});
+router.post("/login", login);
 
 /**
  * @route   POST /api/auth/logout
  * @desc    Logs out a user and blacklists the token
  * @access  Public
  */
-router.post('/logout', (req: Request, res: Response) => {
-  res.status(200).json({
-    message: 'Mock Logout Endpoint. Logout successful and cookie cleared.',
-  });
-});
+router.post("/logout", logout);
 
 /**
  * @route   POST /api/auth/refresh
  * @desc    Reads refresh token cookie, validates it, and issues a new access token
  * @access  Public
  */
-router.post('/refresh', (req: Request, res: Response) => {
-  res.status(200).json({
-    message: 'Mock Refresh Token Endpoint. New access token issued.',
-    accessToken: 'mock_new_access_token_jwt_yyyyy',
-  });
-});
+router.post("/refresh", refresh);
 
 /**
  * @route   GET /api/auth/google
  * @desc    Initiates Google OAuth flow
  * @access  Public
  */
-router.get('/google', (req: Request, res: Response) => {
-  res.status(200).json({
-    message: 'Mock Google OAuth flow initiated. Redirecting to Google Login page...',
-  });
-});
+router.get(
+   "/google",
+   passport.authenticate("google", {
+      scope: ["profile", "email"],
+      session: false,
+   }),
+);
+
+/**
+ * @route   GET /api/auth/google/callback
+ * @desc    Google OAuth Callback handler redirection
+ * @access  Public
+ */
+router.get(
+   "/google/callback",
+   passport.authenticate("google", {
+      session: false,
+      failureRedirect: "/api/auth/login-fail", // Handled or redirected if failure occurs
+   }),
+   oauthSuccessCallback,
+);
 
 /**
  * @route   GET /api/auth/github
  * @desc    Initiates GitHub OAuth flow
  * @access  Public
  */
-router.get('/github', (req: Request, res: Response) => {
-  res.status(200).json({
-    message: 'Mock GitHub OAuth flow initiated. Redirecting to GitHub Login page...',
-  });
+router.get(
+   "/github",
+   passport.authenticate("github", {
+      scope: ["user:email"],
+      session: false,
+   }),
+);
+
+/**
+ * @route   GET /api/auth/github/callback
+ * @desc    GitHub OAuth Callback handler redirection
+ * @access  Public
+ */
+router.get(
+   "/github/callback",
+   passport.authenticate("github", {
+      session: false,
+      failureRedirect: "/api/auth/login-fail",
+   }),
+   oauthSuccessCallback,
+);
+
+/**
+ * Route fallback for OAuth strategy failures
+ */
+router.get("/login-fail", (req, res) => {
+   res.status(401).json({
+      message: "OAuth Authentication failed. Please check your credentials or try again.",
+   });
 });
 
 export const authRouter = router;
