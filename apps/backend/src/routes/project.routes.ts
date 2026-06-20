@@ -2,6 +2,7 @@ import { Router } from "express";
 import { createProject, getProjects, getProjectById, inviteMember } from "../controllers/project.controller";
 import { requireAuth } from "../middlewares/auth";
 import { authorize } from "../middlewares/rbac";
+import { taskRouter } from "./task.routes";
 
 const router = Router();
 
@@ -32,5 +33,7 @@ router.get("/:projectId", requireAuth, authorize(["Admin", "Manager", "Member"])
  * @access  Private (Admin, Manager)
  */
 router.post("/:projectId/invite", requireAuth, authorize(["Admin", "Manager"]), inviteMember);
+
+router.use("/:projectId/tasks", taskRouter);
 
 export const projectRouter = router;
