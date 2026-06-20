@@ -31,8 +31,8 @@ export const authorize = (allowedRoles: string[]) => {
             return;
          }
 
-         // Query database for the target project
-         const project = await Project.findById(projectId);
+         // Query database for the target project and populate user details for owner and members
+         const project = await Project.findById(projectId).populate("owner", "name email").populate("members.user", "name email");
          if (!project) {
             res.status(404).json({ message: "Project not found." });
             return;
